@@ -1,3 +1,90 @@
+/* ===== INDICATEUR DE CHARGEMENT CIRCULAIRE ===== */
+/* Flou sur le contenu principal pendant le chargement */
+body.loading::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(39, 44, 59, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(39, 44, 59, 0.98);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-family: 'Jura', sans-serif;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.loading-container {
+    text-align: center;
+    color: #fff;
+}
+
+.loading-circle {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+}
+
+.loading-circle svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.loading-circle-progress {
+    transform: rotate(-90deg);
+    transition: all 0.3s ease-out;
+}
+
+.loading-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #e9660e;
+    font-family: 'Jura', sans-serif;
+}
+
+.loading-text {
+    font-size: 1.2rem;
+    margin-top: 20px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Animation de l'arc de cercle */
+@keyframes circleProgress {
+    from { stroke-dashoffset: 339.292; }
+    to { stroke-dashoffset: 0; }
+}
+
+/* Animation de fondu à la fin du chargement */
+@keyframes fadeOut {
+    to { opacity: 0; visibility: hidden; }
+}
+
 /* ===== STYLES POUR LA SECTION PROJET ===== */
 .project-section {
     max-width: 896px;
@@ -98,13 +185,22 @@
     overflow: hidden;
     margin: 0 auto;
     border-radius: 4px;
+    position: relative; /* Kept for potential future use, but not strictly needed for single image flow */
 }
 
-.project-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.project-image { 
+    /* This class is now ALONE on the single image in main gallery. */
+    /* It ALREADY has width: 100%; height: 100%; object-fit: cover; from its original rule. */
+    /* We just need to ensure it has the transition and border-radius. */
+    border-radius: 4px;
+    transition: opacity 0.3s ease-in-out; 
 }
+
+/* Styles for .project-image-display, .active-img, .preload-img are no longer needed for the main gallery */
+/* .project-image-display { ... } */
+/* .project-image-display.active-img { ... } */
+/* .project-image-display.preload-img { ... } */
+
 
 .nav-arrow:focus,
 .nav-arrow:active {
@@ -416,8 +512,15 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #272C3B;
+    background-color: #272C3B; /* Default body background */
 }
+
+body.page-index {
+    /* Sur index.html, le body lui-même n'a pas besoin de fond si .hero-background-animations (z-index:0) le couvre */
+    /* Cependant, si .hero-background-animations était z-index: -1, body.page-index devrait être transparent. */
+    /* Pour z-index:0 de .hero-background-animations, le fond du body standard est OK. */
+}
+
 
 /* ===== EN-TÊTE ===== */
 /* Conteneur principal du header */
@@ -427,40 +530,22 @@ body {
     align-items: center;
     padding: 1.5rem 2rem;
     position: relative;
-    z-index: 10;
+    z-index: 10; /* Doit être supérieur à .hero-background-animations (0) et .main-content (2) */
     background-color: #272C3B; /* Default background color for header */
 }
 
-/* Header transparent sur la page d'accueil */
+/* Header transparent spécifiquement pour la page d'accueil */
 body.page-index .header {
-    background-color: transparent !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    box-shadow: none !important;
+    background: transparent !important; 
+    background-color: transparent !important; 
 }
-
-/* S'assure que le header reste transparent sur tous les écrans */
-@media (min-width: 993px) {
-    body.page-index .header {
-        background-color: transparent !important;
-        position: absolute;
-    }
-}
-
-/* Assure que le contenu principal ne soit pas caché derrière le header transparent */
-body.page-index .main-content {
-    margin-top: 0;
-    padding-top: 80px; /* Compense l'espace du header */
-}
-
-/* La règle pour body.page-index .header a été supprimée pour rendre le header opaque partout */
-/* Les styles spécifiques à body.page-index .header ont été retirés */
-
 
 /* Styles pour la version desktop */
 @media (min-width: 993px) {
+    /* Sur la page d'accueil, le header fixe doit aussi être transparent */
+    body.page-index .header {
+        background-color: transparent !important; 
+    }
     .header {
         position: fixed;
         top: 0;
@@ -483,7 +568,7 @@ body.page-index .main-content {
     .hamburger-menu {
         grid-column: 1;
         justify-self: flex-start;
-        position: relative; /* Ensure position is stable */
+        position: relative;
         z-index: 1001; /* Above the logo text but below dropdown menu */
     }
     
@@ -495,7 +580,7 @@ body.page-index .main-content {
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative; /* Ensure position is stable */
+        position: relative;
         z-index: 1001; /* Above the logo text but below dropdown menu */
     }
 }
@@ -862,6 +947,14 @@ body.page-index .main-content {
     color: #586E91;
 }
 
+/* Style pour les éléments actifs dans le menu */
+.dropdown-menu > ul > li.active > a,
+.dropdown-menu > ul > li > a.active,
+.submenu li a.active {
+    color: #FF7F50 !important; /* Orange pour les éléments actifs */
+    font-weight: 600;
+}
+
 /* Style de l'icône de flèche */
 .menu-item .arrow-icon {
     font-size: 14px;
@@ -974,9 +1067,12 @@ body.page-index .main-content {
 .main-content {
     flex: 1;
     position: relative; /* Est déjà relative, ce qui est bien */
-    z-index: 2; /* Augmenté par rapport à 1, pour être sûr qu'il est au-dessus de la vidéo et d'autres éléments potentiels à z-index 0 ou 1 */
-    margin-top: 80px; /* Ajout d'une marge pour compenser le header fixe */
-    background-color: #272C3B; /* Rétabli pour un fond opaque constant */
+    z-index: 2; /* Doit être supérieur à .hero-background-animations (0) */
+    margin-top: 80px; 
+    background-color: #272C3B; /* Fond par défaut pour les autres pages */
+}
+body.page-index .main-content {
+    background-color: transparent; /* Pour voir .hero-background-animations sur index.html */
 }
 
 /* ===== PIED DE PAGE ===== */
@@ -985,8 +1081,20 @@ body.page-index .main-content {
     padding: 1.5rem 2rem;
     text-align: center;
     position: relative;
-    z-index: 5; /* Réduit pour être en dessous du menu déroulant (z-index: 2000) */
+    z-index: 5; /* Doit être supérieur à .hero-background-animations (0) */
+    background-color: #272C3B; /* Fond par défaut pour le footer */
 }
+body.page-index .footer {
+    background-color: transparent !important; /* Footer transparent sur index.html */
+}
+/* Ajustements pour la lisibilité du contenu du footer sur index.html */
+body.page-index .footer .separator {
+    background-color: rgba(88, 110, 145, 0.4); /* Séparateur plus visible */
+}
+body.page-index .footer .footer-text {
+    /* text-shadow: 0 0 3px rgba(0,0,0,0.3); /* Optionnel pour lisibilité */
+}
+
 
 /* ===== VERSION MOBILE ===== */
 /* Ajustements spécifiques pour les écrans mobiles */
@@ -1131,135 +1239,83 @@ form button[type="submit"] span span {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
-    z-index: 1; /* Behind hero content */
-    overflow: hidden; /* Ensure shapes/lines don't escape this container */
-}
-
-.hero-background-animations .shape {
-    position: absolute;
-    border-radius: 50%; /* For circular/oval shapes */
-    opacity: 0.1; /* Start very subtle */
-    /* filter: blur(50px); Actual blur will be added with animation */
-    /* background-color will be set per shape */
-}
-
-.hero-background-animations .shape1 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(88, 110, 145, 0.3) 0%, rgba(39, 44, 59, 0) 70%); /* Subtle blueish */
-    top: 10%;
-    left: 15%;
-    /* Animation will be added later */
-}
-
-.hero-background-animations .shape2 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(233, 102, 14, 0.2) 0%, rgba(39, 44, 59, 0) 70%); /* Subtle orange */
-    bottom: 5%;
-    right: 10%;
-    /* Animation will be added later */
-}
-
-.hero-background-animations .shape3 {
-    width: 250px;
-    height: 250px;
-    background: radial-gradient(circle, rgba(84, 98, 128, 0.25) 0%, rgba(39, 44, 59, 0) 70%); /* Another subtle blue/grey */
-    top: 30%;
-    right: 30%;
-    animation: subtleMove 25s ease-in-out infinite alternate, subtleBlur 25s ease-in-out infinite alternate;
-}
-
-.hero-background-animations .shape1 {
-    animation-delay: 0s, 0s;
-}
-.hero-background-animations .shape2 {
-    animation-name: subtleMove, subtleBlur; /* Explicitly set for clarity */
-    animation-duration: 30s, 30s;
-    animation-delay: -10s, -10s; /* Start at different points in their animation cycle */
-}
-.hero-background-animations .shape3 {
-    animation-delay: -5s, -5s;
-}
-
-/* Keyframes for background shape animations */
-@keyframes subtleMove {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    50% {
-        transform: translate(20px, -30px) scale(1.1);
-    }
-    100% {
-        transform: translate(-10px, 15px) scale(0.95);
-    }
-}
-
-@keyframes subtleBlur {
-    0% {
-        filter: blur(40px);
-        opacity: 0.15;
-    }
-    50% {
-        filter: blur(60px);
-        opacity: 0.25;
-    }
-    100% {
-        filter: blur(35px);
-        opacity: 0.1;
-    }
-}
-
-/* Lignes animées pour toute la page */
-.hero-background-animations {
-    position: fixed; /* Couvre toute la page */
+    height: 100vh; /* Couvre toute la hauteur du viewport */
+    width: 100vw; /* Couvre toute la largeur du viewport */
+    position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
+    z-index: 0; /* Au-dessus du fond du body, mais potentiellement sous d'autres contenus */
+    overflow: hidden; /* Essentiel pour les animations internes */
+}
+
+/* Formes flottantes plus visibles et plus dynamiques */
+.hero-background-animations .shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    opacity: 0.4; /* Opacité augmentée */
+    animation: float 8s ease-in-out infinite; /* Animation plus rapide */
+}
+
+.hero-background-animations .shape1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(88, 110, 145, 0.8) 0%, rgba(39, 44, 59, 0) 70%);
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.hero-background-animations .shape2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(233, 102, 14, 0.6) 0%, rgba(39, 44, 59, 0) 70%);
+    bottom: 10%;
+    right: 10%;
+    animation-delay: -2s;
+    animation-duration: 10s; /* Durée réduite */
+}
+
+.hero-background-animations .shape3 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(100, 120, 150, 0.7) 0%, rgba(39, 44, 59, 0) 70%);
+    top: 50%;
+    right: 30%;
+    animation-delay: -4s;
+    animation-duration: 12s; /* Durée réduite */
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    25% {
+        transform: translate(30px, -20px) scale(1.05);
+    }
+    50% {
+        transform: translate(0, -30px) scale(0.95);
+    }
+    75% {
+        transform: translate(-30px, 0) scale(1.05);
+    }
+}
+
+
+
+/* Formes flottantes pour l'arrière-plan */
+.hero-background-animations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
     overflow: hidden;
-    /* Arrière-plan avec lignes plus épaisses et plus espacées */
-    background-image: 
-        repeating-linear-gradient(
-            45deg,
-            rgba(88, 110, 145, 0.08),
-            rgba(88, 110, 145, 0.08) 2px,
-            transparent 2px,
-            transparent 100px
-        ),
-        repeating-linear-gradient(
-            -45deg,
-            rgba(233, 102, 14, 0.05),
-            rgba(233, 102, 14, 0.05) 2px,
-            transparent 2px,
-            transparent 150px
-        );
-    background-size: 200% 200%, 250% 250%; /* Taille augmentée pour couvrir toute la page */
-    animation: 
-        moveLines1 80s linear infinite,
-        moveLines2 100s linear infinite reverse;
+    pointer-events: none; /* Permet les clics à travers cet élément */
 }
 
-@keyframes moveLines1 {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 200%; } /* Corresponds to background-size */
-}
-
-@keyframes moveLines2 {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 150% 150%; } /* Corresponds to background-size */
-}
-
-@keyframes moveLines3 {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 0% 100%; } /* Only vertical movement for this layer */
-}
-
-/* Remove old pseudo-element styles for lines if they existed on .hero-background-animations */
+/* Suppression des anciens styles de lignes */
 .hero-background-animations::before,
 .hero-background-animations::after {
     content: none; /* Effectively removes them */
@@ -1467,6 +1523,55 @@ form button[type="submit"] span span {
     }
 }
 
+/* ===== GSAP CAROUSEL STYLES (for gsap.html) ===== */
+.carousel-viewport {
+    width: 100%; /* Takes full width of its container */
+    /* max-width: none; */ /* No longer needed if width is 100% of a constrained parent */
+    margin: 50px 0; /* Vertical margin, no horizontal auto margin */
+    overflow: hidden;
+    /* border: 2px solid #444; */ /* Removed temporary border */
+    /* padding: 10px; */ /* Padding might affect calculations, remove or adjust if needed */
+    /* background-color: #333; */ /* Removed temporary background */
+    /* For a truly full-width screen experience, the PARENT of .carousel-viewport might need to be 100vw */
+    /* and .carousel-viewport itself might need to be carefully positioned if header/footer are present */
+    /* On gsap.html, .main-content-gsap-test is 100% width already. */
+}
+
+.carousel-track {
+    display: flex;
+    /* La largeur sera calculée par JS ou sera implicitement la somme des cartes + marges */
+    /* Pour le drag GSAP, on ne met souvent pas de transition CSS ici, GSAP s'en charge */
+}
+
+.carousel-card {
+    width: 280px; /* Fixed width for cards */
+    height: 380px; /* Fixed height for cards */
+    margin-right: 20px;
+    background-color: #555;
+    border-radius: 8px;
+    flex-shrink: 0; /* Important pour que les cartes ne rétrécissent pas */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Si l'image est plus grande que la carte */
+    transform-origin: center center; /* Assure que l'échelle se fait depuis le centre */
+    /* On pourrait ajouter une transition CSS ici pour transform, mais GSAP s'en charge mieux */
+    /* transition: transform 0.2s ease-out, opacity 0.2s ease-out; */
+}
+
+.carousel-card:last-child {
+    margin-right: 0;
+}
+
+.carousel-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block; /* Enlève l'espace sous l'image si elle était inline */
+    border-radius: 6px; /* Léger arrondi si l'image touche les bords de la carte */
+}
+
+
 /* ===== LIGHTBOX MODAL STYLES (ALL SCREENS) ===== */
 body.lightbox-active {
     overflow: hidden; /* Prevent scrolling of background page */
@@ -1487,7 +1592,8 @@ body.lightbox-active {
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transform: scale(0.95); /* Start slightly scaled down */
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; /* Add transform to transition */
     padding: 10px; /* Add some padding for small screens */
     box-sizing: border-box;
 }
@@ -1495,6 +1601,7 @@ body.lightbox-active {
 .lightbox-modal.active {
     opacity: 1;
     visibility: visible;
+    transform: scale(1); /* Scale to normal size when active */
 }
 
 .lightbox-content {
@@ -1550,15 +1657,25 @@ body.lightbox-active {
     justify-content: center;
     align-items: center;
     margin-bottom: 8px;
+    position: relative; /* Kept for potential future use */
     overflow: hidden; /* Important for image not to overflow its container */
 }
 
-.lightbox-image {
-    max-width: 100%;
-    max-height: 100%; 
-    object-fit: contain;
-    border-radius: 3px; /* Slightly smaller radius */
+.lightbox-image { 
+    /* This class is now ALONE on the single image in lightbox. */
+    /* It needs full sizing and the transition. */
+    width: 100%;
+    height: 100%;
+    object-fit: contain; 
+    border-radius: 3px; 
+    transition: opacity 0.3s ease-in-out;
 }
+
+/* Styles for .lightbox-image-display, .active-img, .preload-img are no longer needed for the lightbox */
+/* .lightbox-image-display { ... } */
+/* .lightbox-image-display.active-img { ... } */
+/* .lightbox-image-display.preload-img { ... } */
+
 
 .lightbox-image-subtitle {
     font-family: 'Jura', sans-serif;

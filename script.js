@@ -106,7 +106,8 @@ function initProjectNavigation() {
     const elements = {
         'projectTitle': logElement('.project-title'),
         'projectSubtitle': logElement('.project-subtitle'),
-        'imageElement': logElement('.project-image'),
+        // 'imageElement': logElement('.project-image'), // Old single image
+        'imageElements': document.querySelectorAll('.project-image-container .project-image-display'), // Get both image elements
         'topNav': logElement('.top-nav'),
         'bottomNav': logElement('.bottom-nav'),
         'projectCounter': logElement('.top-nav .nav-counter span'),
@@ -121,21 +122,33 @@ function initProjectNavigation() {
     console.log('Vérification des éléments essentiels...');
     console.log('Project title:', elements.projectTitle);
     console.log('Project subtitle:', elements.projectSubtitle);
-    console.log('Image element:', elements.imageElement);
+    
+    // Avec la nouvelle logique à une seule image, imageElements.length devrait être 1.
+    // Ou alors, on cible directement .project-image-display (qui est la classe unique maintenant sur l'img)
+    const imageDisplayElement = projectSection.querySelector('.project-image-display');
+    if (imageDisplayElement) {
+        console.log('Image display element for single image fade found:', imageDisplayElement);
+        elements.imageElements = [imageDisplayElement]; // Conserver la structure d'elements si utilisée ailleurs
+    } else {
+        console.error('Expected 1 image display element (.project-image-display), found none.');
+        return; 
+    }
     console.log('Previous project button:', elements.prevProjectBtn);
     console.log('Next project button:', elements.nextProjectBtn);
     console.log('Previous image button:', elements.prevImageBtn);
     console.log('Next image button:', elements.nextImageBtn);
     
-    if (!elements.projectTitle || !elements.projectSubtitle || !elements.imageElement) {
-        console.error('Éléments de base manquants, arrêt du script');
+    if (!elements.projectTitle || !elements.projectSubtitle || !imageDisplayElement) {
+        console.error('Éléments de base manquants pour la galerie (titre, sous-titre ou image), arrêt du script');
         return;
     }
     
     // Extraction des éléments avec vérification
     const projectTitle = elements.projectTitle;
     const projectSubtitle = elements.projectSubtitle;
-    const imageElement = elements.imageElement;
+    // let activeImageElement = document.querySelector('.project-image-display.active-img'); // Plus besoin
+    // let preloadImageElement = document.querySelector('.project-image-display.preload-img'); // Plus besoin
+    const currentImageElement = imageDisplayElement; // C'est notre unique image
     const topNav = elements.topNav;
     const bottomNav = elements.bottomNav;
     const projectCounter = elements.projectCounter;
@@ -200,10 +213,106 @@ function initProjectNavigation() {
         adjustAndSplitText(projectTitle, project.title, 14);
         adjustAndSplitText(projectSubtitle, image.subtitle, 12);
 
-        // Mettre à jour l'image
-        imageElement.src = image.src;
-        imageElement.alt = image.subtitle;
-        
+        // Mettre à jour les titres et sous-titres
+        adjustAndSplitText(projectTitle, project.title, 14);
+        adjustAndSplitText(projectSubtitle, image.subtitle, 12);
+
+        // ----- Logique de Fondu pour Image Unique -----
+        const newImageSrc = image.src;
+        const currentSrc = currentImageElement.src;
+
+        // Vérifier si la source de l'image doit réellement changer
+        // La comparaison directe de src peut être problématique si l'une est absolue et l'autre relative.
+        // Utiliser endsWith est plus sûr si image.src est toujours relatif.
+        let imagesAreDifferent = true;
+        if (currentSrc && newImageSrc) {
+            imagesAreDifferent = !currentSrc.endsWith(newImageSrc);
+        } else if (!newImageSrc && !currentSrc) { // Both are empty or null
+            imagesAreDifferent = false;
+        }
+
+
+        if (imagesAreDifferent) {
+            console.log(`[Galerie SingleImg] Changement d'image de ${currentSrc} vers ${newImageSrc}`);
+            currentImageElement.style.opacity = '0';
+
+            // Attendre la fin de la transition d'opacité pour changer la source
+            // Utiliser une propriété pour stocker le handler afin de le retirer si besoin
+            if (currentImageElement.galleryTransitionEndHandler) {
+                currentImageElement.removeEventListener('transitionend', currentImageElement.galleryTransitionEndHandler);
+            }
+
+            currentImageElement.galleryTransitionEndHandler = function handleTransitionEnd(event) {
+                // S'assurer que c'est bien la transition d'opacité qui a fini
+                if (event.propertyName !== 'opacity' || currentImageElement.style.opacity !== '0') {
+                    return;
+                }
+                console.log("[Galerie SingleImg] Transition opacity 0 terminée. Changement src.");
+                currentImageElement.removeEventListener('transitionend', handleTransitionEnd); // Auto-nettoyage
+                currentImageElement.galleryTransitionEndHandler = null;
+
+                currentImageElement.src = newImageSrc;
+                currentImageElement.alt = image.subtitle;
+
+                // Attendre que la nouvelle image soit chargée pour la faire réapparaître
+                if (currentImageElement.galleryImageLoadHandler) {
+                    currentImageElement.removeEventListener('load', currentImageElement.galleryImageLoadHandler);
+                }
+                currentImageElement.galleryImageLoadHandler = function handleLoad() {
+                    console.log("[Galerie SingleImg] Nouvelle image chargée. Opacity 1.");
+                    currentImageElement.style.opacity = '1';
+                    currentImageElement.removeEventListener('load', handleLoad);
+                    currentImageElement.galleryImageLoadHandler = null;
+                };
+                currentImageElement.addEventListener('load', currentImageElement.galleryImageLoadHandler);
+
+                // Si l'image est déjà en cache, onload pourrait ne pas se déclencher.
+                // Forcer l'opacité à 1 si c'est le cas, après un bref délai pour que la src soit prise en compte.
+                if (currentImageElement.complete && currentImageElement.src.endsWith(newImageSrc)) {
+                    console.log("[Galerie SingleImg] Image en cache, opacity 1 (après src change).");
+                     // requestAnimationFrame(() => currentImageElement.style.opacity = '1');
+                     // L'événement load devrait quand même se déclencher pour les images en cache.
+                     // Si ce n'est pas le cas, il faudrait forcer ici.
+                     // Pour l'instant, on se fie au `load`.
+                }
+            };
+            currentImageElement.addEventListener('transitionend', currentImageElement.galleryTransitionEndHandler);
+            
+            // Si l'opacité est déjà à 0 (par ex. navigation très rapide), changer la src directement
+            // et préparer le fade in.
+            if (parseFloat(window.getComputedStyle(currentImageElement).opacity) === 0) {
+                 console.log("[Galerie SingleImg] Opacité déjà 0, changement src direct.");
+                 if (currentImageElement.galleryTransitionEndHandler) { // Nettoyer le listener transitionend car on ne l'attendra pas
+                    currentImageElement.removeEventListener('transitionend', currentImageElement.galleryTransitionEndHandler);
+                     currentImageElement.galleryTransitionEndHandler = null;
+                 }
+                currentImageElement.src = newImageSrc;
+                currentImageElement.alt = image.subtitle;
+                if (currentImageElement.galleryImageLoadHandler) { // Nettoyer au cas où
+                    currentImageElement.removeEventListener('load', currentImageElement.galleryImageLoadHandler);
+                }
+                currentImageElement.galleryImageLoadHandler = function handleLoad() {
+                    console.log("[Galerie SingleImg] Nouvelle image chargée (src direct). Opacity 1.");
+                    currentImageElement.style.opacity = '1';
+                    currentImageElement.removeEventListener('load', handleLoad);
+                    currentImageElement.galleryImageLoadHandler = null;
+                };
+                currentImageElement.addEventListener('load', currentImageElement.galleryImageLoadHandler);
+                if (currentImageElement.complete && currentImageElement.src.endsWith(newImageSrc)) {
+                    currentImageElement.galleryImageLoadHandler(); // Déclencher manuellement
+                }
+            }
+
+
+        } else {
+            console.log("[Galerie SingleImg] Image est déjà la bonne:", newImageSrc);
+            // S'assurer que l'opacité est à 1 si elle avait été mise à 0 par erreur
+            if (currentImageElement.style.opacity !== '1') {
+                 currentImageElement.style.opacity = '1';
+            }
+        }
+        // ----- Fin Logique de Fondu pour Image Unique -----
+            
         // Mettre à jour les compteurs
         projectCounter.textContent = `${(currentProjectIndex + 1).toString().padStart(2, '0')}/${projects.length.toString().padStart(2, '0')}`;
         imageCounter.textContent = `${(currentImageIndex + 1).toString().padStart(2, '0')}/${project.images.length.toString().padStart(2, '0')}`;
@@ -513,7 +622,9 @@ function initProjectNavigation() {
 
     if (lightboxModal) { // Check if lightbox HTML element exists
         console.log('[Lightbox] Lightbox HTML found. Proceeding with setup for all screens.');
-        const lightboxImageElement = lightboxModal.querySelector('.lightbox-image');
+        const lightboxImageElement = lightboxModal.querySelector('.lightbox-image-display'); // Unique image
+        // let lightboxActiveImageElement = lightboxModal.querySelector('.lightbox-image-display.active-img'); // Plus besoin
+        // let lightboxPreloadImageElement = lightboxModal.querySelector('.lightbox-image-display.preload-img'); // Plus besoin
         const lightboxProjectTitleElement = lightboxModal.querySelector('.lightbox-project-title');
         const lightboxImageSubtitleElement = lightboxModal.querySelector('.lightbox-image-subtitle');
         const lightboxCloseButton = lightboxModal.querySelector('.lightbox-close');
@@ -530,11 +641,98 @@ function initProjectNavigation() {
             const project = projects[lightboxCurrentProjectIndex];
             const image = project.images[lightboxCurrentImageIndex];
 
-            lightboxImageElement.src = image.src;
-            lightboxImageElement.alt = image.subtitle;
-            
+            if (!lightboxActiveImageElement || !lightboxPreloadImageElement) {
+                lightboxActiveImageElement = lightboxModal.querySelector('.lightbox-image-display.active-img');
+                lightboxPreloadImageElement = lightboxModal.querySelector('.lightbox-image-display.preload-img');
+                if (!lightboxActiveImageElement || !lightboxPreloadImageElement) {
+                    console.error("[Lightbox] Impossible de trouver les éléments image pour le fondu dans la lightbox.");
+                    return;
+                }
+            }
+
+            lightboxPreloadImageElement.src = image.src;
+            // Mettre à jour les titres et sous-titres
             adjustAndSplitText(lightboxProjectTitleElement, project.title, 14);
             adjustAndSplitText(lightboxImageSubtitleElement, image.subtitle, 12);
+
+            // ----- Logique de Fondu pour Image Unique (Lightbox) -----
+            const newLightboxImageSrc = image.src;
+            const currentLightboxSrc = lightboxImageElement.src;
+            let lbImagesAreDifferent = true;
+
+            if (currentLightboxSrc && newLightboxImageSrc) {
+                lbImagesAreDifferent = !currentLightboxSrc.endsWith(newLightboxImageSrc);
+            } else if (!newLightboxImageSrc && !currentLightboxSrc) {
+                lbImagesAreDifferent = false;
+            }
+
+            if (lbImagesAreDifferent) {
+                console.log(`[Lightbox SingleImg] Changement d'image de ${currentLightboxSrc} vers ${newLightboxImageSrc}`);
+                lightboxImageElement.style.opacity = '0';
+
+                if (lightboxImageElement.lightboxTransitionEndHandler) {
+                    lightboxImageElement.removeEventListener('transitionend', lightboxImageElement.lightboxTransitionEndHandler);
+                }
+                lightboxImageElement.lightboxTransitionEndHandler = function handleLBTransitionEnd(event) {
+                    if (event.propertyName !== 'opacity' || lightboxImageElement.style.opacity !== '0') {
+                        return;
+                    }
+                    console.log("[Lightbox SingleImg] Transition opacity 0 terminée. Changement src.");
+                    lightboxImageElement.removeEventListener('transitionend', handleLBTransitionEnd);
+                    lightboxImageElement.lightboxTransitionEndHandler = null;
+                    
+                    lightboxImageElement.src = newLightboxImageSrc;
+                    lightboxImageElement.alt = image.subtitle;
+
+                    if (lightboxImageElement.lightboxImageLoadHandler) {
+                        lightboxImageElement.removeEventListener('load', lightboxImageElement.lightboxImageLoadHandler);
+                    }
+                    lightboxImageElement.lightboxImageLoadHandler = function handleLBLoad() {
+                        console.log("[Lightbox SingleImg] Nouvelle image chargée. Opacity 1.");
+                        lightboxImageElement.style.opacity = '1';
+                        lightboxImageElement.removeEventListener('load', handleLBLoad);
+                        lightboxImageElement.lightboxImageLoadHandler = null;
+                    };
+                    lightboxImageElement.addEventListener('load', lightboxImageElement.lightboxImageLoadHandler);
+
+                    if (lightboxImageElement.complete && lightboxImageElement.src.endsWith(newLightboxImageSrc)) {
+                       lightboxImageElement.lightboxImageLoadHandler();
+                    }
+                };
+                lightboxImageElement.addEventListener('transitionend', lightboxImageElement.lightboxTransitionEndHandler);
+
+                if (parseFloat(window.getComputedStyle(lightboxImageElement).opacity) === 0) {
+                    console.log("[Lightbox SingleImg] Opacité déjà 0, changement src direct.");
+                    if (lightboxImageElement.lightboxTransitionEndHandler) {
+                        lightboxImageElement.removeEventListener('transitionend', lightboxImageElement.lightboxTransitionEndHandler);
+                        lightboxImageElement.lightboxTransitionEndHandler = null;
+                    }
+                    lightboxImageElement.src = newLightboxImageSrc;
+                    lightboxImageElement.alt = image.subtitle;
+
+                    if (lightboxImageElement.lightboxImageLoadHandler) {
+                         lightboxImageElement.removeEventListener('load', lightboxImageElement.lightboxImageLoadHandler);
+                    }
+                    lightboxImageElement.lightboxImageLoadHandler = function handleLBLoadDirect() {
+                        console.log("[Lightbox SingleImg] Nouvelle image chargée (src direct). Opacity 1.");
+                        lightboxImageElement.style.opacity = '1';
+                        lightboxImageElement.removeEventListener('load', handleLBLoadDirect);
+                        lightboxImageElement.lightboxImageLoadHandler = null;
+                    };
+                    lightboxImageElement.addEventListener('load', lightboxImageElement.lightboxImageLoadHandler);
+                    if (lightboxImageElement.complete && lightboxImageElement.src.endsWith(newLightboxImageSrc)) {
+                        lightboxImageElement.lightboxImageLoadHandler();
+                    }
+                }
+
+
+            } else {
+                console.log("[Lightbox SingleImg] Image est déjà la bonne:", newLightboxImageSrc);
+                if (lightboxImageElement.style.opacity !== '1') {
+                    lightboxImageElement.style.opacity = '1';
+                }
+            }
+            // ----- Fin Logique de Fondu pour Image Unique (Lightbox) -----
         }
 
         function openLightbox() {

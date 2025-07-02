@@ -86,7 +86,143 @@ La navigation dans la galerie d'images suit des règles strictes pour assurer un
 
 **Attention** : Toute modification de ces comportements doit être testée sur des projets avec un nombre variable d'images (0, 1, plusieurs) pour s'assurer de la stabilité du système.
 
-### Amélioration de la Navigation sur Mobile (Juin 2024)
+### Carrousel GSAP - Spécifications Techniques
+
+Le carrousel GSAP est une fonctionnalité avancée utilisée pour afficher des images de manière interactive. Voici les spécifications à respecter :
+
+### Structure du Fichier
+- **Fichier principal** : `gsap.html`
+- **Dépendances** :
+  - GSAP 3.12.4 (via CDN)
+  - GSAP Draggable (via CDN)
+  - Font Awesome 6.0.0-beta3 (via CDN)
+
+### Dimensions des Cartes
+- **Carte Centrale** : 
+  - Largeur : 1050px
+  - Hauteur : 650px
+  - Opacité : 1
+  - Z-index : 3
+
+- **Cartes Latérales** :
+  - Largeur : 600px
+  - Hauteur : 500px
+  - Opacité : 0.7
+  - Z-index : 2
+  - Échelle : 0.7
+
+### Comportement
+1. **Navigation** :
+   - Glisser-déposer horizontal pour changer de carte
+   - Animation fluide avec transition GSAP
+   - Les cartes latérales se déplacent en arrière-plan
+
+2. **Zones Interactives** :
+   - Toute la zone de la fenêtre est interactive SAUF le header et le footer
+   - Le header et le footer restent fixes pendant le défilement
+
+3. **Optimisations** :
+   - Désactivation de la sélection de texte pendant le glissement
+   - Prévention du comportement par défaut du navigateur
+   - Gestion spécifique des événements tactiles
+
+### Points d'Attention
+- Ne pas modifier les valeurs de `offsetPercent` (0.35) sans ajuster les positions des cartes latérales
+- Toujours préserver les transitions GSAP pour une animation fluide
+- Tester sur mobile pour s'assurer que le glissement fonctionne correctement
+- Les images sont automatiquement redimensionnées pour s'adapter aux conteneurs
+
+### Personnalisation
+Pour modifier les dimensions :
+1. Modifier les variables `centerWidth` et `centerHeight` pour la carte centrale
+2. Modifier les variables `cardWidth` et `cardHeight` pour les cartes latérales
+3. Tester l'affichage sur différentes tailles d'écran
+
+## Indicateur de Chargement Circulaire (Juin 2024)
+
+### Fonctionnalité
+- Un indicateur de chargement circulaire s'affiche pendant le chargement du carrousel
+- Affiche la progression du chargement de 0% à 100%
+- L'arrière-plan est flouté pendant le chargement
+- Disparaît automatiquement une fois le chargement terminé
+
+### Implémentation
+1. **HTML** :
+   ```html
+   <div class="loading-overlay" id="loadingOverlay">
+       <div class="loading-container">
+           <div class="loading-circle">
+               <svg class="loading-circle-bg" viewBox="0 0 120 120">
+                   <circle cx="60" cy="60" r="54" fill="none" stroke="#e9660e" stroke-width="6" stroke-opacity="0.2"/>
+               </svg>
+               <svg class="loading-circle-progress" viewBox="0 0 120 120">
+                   <circle cx="60" cy="60" r="54" fill="none" stroke="#e9660e" stroke-width="6" stroke-linecap="round" stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+               </svg>
+               <div class="loading-percent">0%</div>
+           </div>
+           <div class="loading-text">Chargement du carrousel...</div>
+       </div>
+   </div>
+   ```
+
+2. **JavaScript** :
+   - La classe `loading` est ajoutée au `body` au chargement
+   - La progression est mise à jour en fonction du chargement des images
+   - L'overlay est masqué une fois le chargement terminé
+
+3. **Points Importants** :
+   - Ne pas modifier la structure HTML de l'indicateur
+   - Les couleurs sont basées sur la charte graphique ITAMAX
+   - L'animation est fluide et s'adapte à la vitesse de chargement
+
+## Règles de Navigation du Menu - Mise à jour (Juin 2024)
+
+### Gestion des États Actifs du Menu
+
+1. **Structure du Menu**
+   - Le menu utilise des classes CSS pour gérer les états actifs et l'affichage des sous-menus
+   - Ne jamais utiliser de styles en ligne pour forcer l'affichage des menus
+   - Toujours utiliser les classes CSS prévues à cet effet
+
+2. **Classes à Utiliser**
+   - `.active` : Pour marquer l'élément de menu actif
+   - `.has-submenu` : Pour les éléments de menu avec sous-menu
+   - `.submenu` : Conteneur du sous-menu
+   - `.menu-item` : Pour les liens du menu principal
+
+3. **Règles d'Implémentation**
+   - Sur la page d'accueil (`index.html`), l'élément "Accueil" doit avoir la classe `active`
+   - Sur les pages de projets, l'élément "Projets" doit avoir la classe `active`
+   - Le sous-menu correspondant à la page active doit avoir la classe `active`
+   - Pour le carrousel (`gsap.html`), l'élément "Carrousel" doit avoir la classe `active`
+
+4. **Exemple de Structure Correcte**
+   ```html
+   <!-- Pour une page de projet (ex: amo.html) -->
+   <li class="has-submenu active">
+     <a href="#" class="menu-item">
+       Projets
+       <i class="fas fa-chevron-down arrow-icon"></i>
+     </a>
+     <ul class="submenu">
+       <li><a href="amo.html" class="active">AMO</a></li>
+     </ul>
+   </li>
+   
+   <!-- Pour la page Carrousel -->
+   <li class="active">
+     <a href="gsap.html" class="menu-item active">
+       Carrousel
+     </a>
+   </li>
+   ```
+
+5. **Points Critiques**
+   - Ne jamais ajouter de styles en ligne comme `style="display: block;"` sur les éléments de menu
+   - Toujours utiliser les classes CSS prévues pour gérer l'affichage
+   - Vérifier que les sous-menus s'ouvrent et se ferment correctement après chaque modification
+
+## Amélioration de la Navigation sur Mobile (Juin 2024)
 
 1. **Navigation par Swipe Optimisée**
    - La détection du swipe est maintenant limitée à la zone de l'image
@@ -149,3 +285,48 @@ Plusieurs ajustements et corrections ont été apportés pour améliorer l'expé
     *   **Solution :** Deux nouveaux paragraphes contenant les numéros ont été ajoutés. Ils ont été stylisés (couleur orange, police Jura, taille adaptée pour mobile et bureau) de manière cohérente avec l'adresse e-mail, en utilisant des styles CSS embarqués et en tenant compte de la grille flexible parente pour l'espacement.
     *   *Fichiers modifiés : `contact.html` (HTML et styles embarqués)*
     *   *Branche : `feat/contact-updates-and-arrow-fix`*
+
+# CONTRIBUTING
+
+## Carrousel GSAP (gsap.html)
+
+La page `gsap.html` présente un carrousel horizontal immersif, inspiré de GSAP, avec les caractéristiques suivantes :
+
+### Fonctionnalités principales
+- **Carrousel 3D** : 1 carte centrale très grande (1200x600px), 2 cartes latérales partiellement visibles (300x200px, 35% visibles sur les bords), effet immersif.
+- **Navigation** :
+  - Swipe/drag à la souris ou au doigt (mobile).
+  - Pas de boutons/flèches, navigation fluide et infinie.
+  - La sélection de texte est désactivée pendant le drag.
+- **Images** :
+  - Les images des cartes sont dans le dossier `/gsap` : `A1.PNG`, `A2.webp`, `A3.webp`, `A4.jpg`.
+  - Le titre de chaque carte s'affiche en overlay sur l'image.
+- **Design** :
+  - Fond sombre (#242A3A), header centré "ITAMAX" (#6A82A2), footer centré (#3B4151).
+  - Responsive jusqu'à 2560px de large.
+
+### Structure technique
+- **HTML/CSS** :
+  - Structure simple, tout le style principal est dans la balise `<style>` de la page.
+  - Les cartes sont générées dynamiquement en JS.
+- **JavaScript** :
+  - Pas de dépendance à React/Vue/etc.
+  - Utilise GSAP (et Draggable, même si le drag est géré en natif JS ici).
+  - Les cartes sont définies dans le tableau `cardsData` (modifiable pour ajouter/retirer des slides).
+  - La fonction `updateCards()` gère la position, la taille et la visibilité des cartes selon l'index courant.
+
+### Pour modifier ou étendre
+- **Ajouter une carte** :
+  - Ajouter une entrée dans `cardsData` avec un titre, une couleur et le chemin de l'image.
+- **Changer la taille** :
+  - Modifier `centerWidth`/`centerHeight` ou `cardWidth`/`cardHeight` dans `updateCards()`.
+- **Changer l'effet d'overflow** :
+  - Modifier `offsetPercent` (0.35 = 35% visible sur les côtés).
+
+### Dépendances externes
+- [GSAP 3.12.4](https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js)
+- [GSAP Draggable 3.12.4](https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/Draggable.min.js)
+
+---
+
+Pour toute contribution, gardez la structure simple et l'expérience immersive du carrousel.

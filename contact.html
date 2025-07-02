@@ -24,14 +24,14 @@
   </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&family=Baloo+Chettan+2:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/svg+xml" href="/logo-itamax-favicon.svg">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 
 <body><div class="animated-background"></div>
   <header class="header">
     <div class="hamburger-menu">
-      <img src="HamburMenu.svg" alt="Menu" class="hamburger-icon default-icon">
-      <img src="HamburMenuHover.svg" alt="Menu" class="hamburger-icon hover-icon">
+      <img src="boutons/HamburMenu.svg" alt="Menu" class="hamburger-icon default-icon">
+      <img src="boutons/HamburMenuHover.svg" alt="Menu" class="hamburger-icon hover-icon">
     </div>
     <button class="close-menu" aria-label="Fermer le menu" style="display:none">
       <span aria-hidden="true">&times;</span>
@@ -55,6 +55,11 @@
           </ul>
         </li>
         <li>
+          <a href="gsap.html" class="menu-item">
+            Carrousel
+          </a>
+        </li>
+        <li>
           <a href="contact.html" class="menu-item active">
             Contact
           </a>
@@ -62,10 +67,10 @@
       </ul>
     </nav>
     <div class="logo-link" onclick="window.location.href='index.html'" style="cursor: pointer;">
-      <h1 class="logo-text">ITAMAX</h1>
+      <img src="boutons/itamaxTextHeader.svg" alt="ITAMAX" class="logo-text">
     </div>
-    <div class="logo-container" onclick="window.location.href='index.html'" style="cursor: pointer;">
-      <img src="logo-itamax.svg" alt="Logo ITAMAX" class="logo" />
+    <div class="logo-container" onmouseover="this.querySelector('img').src='boutons/logo-itamaxHover.svg'" onmouseout="this.querySelector('img').src='boutons/logo-itamax.svg'" onclick="window.location.href='index.html'" style="cursor: pointer;">
+      <img src="boutons/logo-itamax.svg" alt="Logo ITAMAX" class="logo" />
     </div>
   </header>
 
@@ -395,3 +400,4 @@
 </body>
 
 </html>
+
